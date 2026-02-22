@@ -7,7 +7,6 @@ const { Pool } = require('pg');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const nodemailer = require('nodemailer');
-const twilio = require('twilio');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -22,20 +21,18 @@ app.use(session({
   saveUninitialized: false
 }));
 
+// PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
+// Cloudinary config
 cloudinary.config({
   secure: true
 });
 
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
+// Nodemailer transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -44,6 +41,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Middleware
 function requireLogin(req, res, next) {
   if (!req.session.user) return res.status(401).json({ error: 'Login required' });
   next();
@@ -55,21 +53,22 @@ function requireSeller(req, res, next) {
   next();
 }
 
+// Routes
+
+// Register
 app.post('/api/register', async (req, res) => {
   const { username, email, password, role, phone } = req.body;
   const hash = await bcrypt.hash(password, 10);
-
   await pool.query(
     'INSERT INTO users(username,email,password,role,phone) VALUES($1,$2,$3,$4,$5)',
     [username, email, hash, role, phone]
   );
-
   res.json({ message: 'Registered successfully' });
 });
 
+// Login
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
-
   const result = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
   if (result.rows.length === 0) return res.status(400).json({ error: 'Invalid email' });
 
@@ -86,9 +85,9 @@ app.post('/api/login', async (req, res) => {
   res.json({ message: 'Login successful' });
 });
 
+// Seller adds product
 app.post('/api/products', requireSeller, upload.single('image'), async (req, res) => {
   const { name, price, description } = req.body;
-
   const result = await cloudinary.uploader.upload(req.file.path);
 
   await pool.query(
@@ -99,21 +98,18 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
   res.json({ message: 'Product added' });
 });
 
+// List all products
 app.get('/api/products', async (req, res) => {
   const result = await pool.query('SELECT * FROM products');
   res.json(result.rows);
 });
 
+// Place order (buyer)
 app.post('/api/orders', requireLogin, async (req, res) => {
   const { product_id, quantity, address } = req.body;
 
-  const productRes = await pool.query(
-    'SELECT * FROM products WHERE id=$1',
-    [product_id]
-  );
-
-  if (productRes.rows.length === 0)
-    return res.status(404).json({ error: 'Product not found' });
+  const productRes = await pool.query('SELECT * FROM products WHERE id=$1', [product_id]);
+  if (productRes.rows.length === 0) return res.status(404).json({ error: 'Product not found' });
 
   const product = productRes.rows[0];
 
@@ -122,11 +118,7 @@ app.post('/api/orders', requireLogin, async (req, res) => {
     [product_id, req.session.user.id, quantity, address]
   );
 
-  const sellerRes = await pool.query(
-    'SELECT email, phone FROM users WHERE id=$1',
-    [product.seller_id]
-  );
-
+  const sellerRes = await pool.query('SELECT email FROM users WHERE id=$1', [product.seller_id]);
   const seller = sellerRes.rows[0];
 
   const message = `New Order!
@@ -135,6 +127,7 @@ Quantity: ${quantity}
 Buyer: ${req.session.user.username}
 Address: ${address}`;
 
+  // Send email notification to seller
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: seller.email,
@@ -142,15 +135,10 @@ Address: ${address}`;
     text: message
   });
 
-  await twilioClient.messages.create({
-    body: message,
-    from: process.env.TWILIO_PHONE,
-    to: seller.phone
-  });
-
-  res.json({ message: 'Order placed and seller notified' });
+  res.json({ message: 'Order placed and seller notified via email' });
 });
 
+// Seller views orders
 app.get('/api/seller/orders', requireSeller, async (req, res) => {
   const result = await pool.query(
     `SELECT o.*, p.name 
