@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lamp Shop</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <h1>Lamp Shop</h1>
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="buyer-login.html">Buyer Login</a></li>
+    <li><a href="buyer-register.html">Buyer Register</a></li>
+    <li><a href="seller-login.html">Seller Login</a></li>
+    <li><a href="seller-register.html">Seller Register</a></li>
+  </ul>
+</nav>
+
+<section class="search-bar">
+  <input type="text" id="search" placeholder="Search products...">
+</section>
+
+<section class="slideshow" id="slideshow"></section>
+<section class="product-grid" id="product-grid"></section>
+
+<div id="product-modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <img id="modal-img" src="">
+    <h2 id="modal-name"></h2>
+    <p id="modal-price"></p>
+    <input type="number" id="modal-qty" value="1" min="1">
+    <button id="buy-now">Buy Now</button>
+    <button id="add-cart">Add to Cart</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
