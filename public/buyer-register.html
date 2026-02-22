@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buyer Register</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+<h1>Lamp Shop</h1>
+<ul>
+<li><a href="index.html">Home</a></li>
+<li><a href="buyer-login.html">Login</a></li>
+</ul>
+</nav>
+
+<div class="auth-container">
+<h2>Buyer Register</h2>
+<input type="text" id="buyer-username" placeholder="Username">
+<input type="email" id="buyer-email" placeholder="Email">
+<input type="password" id="buyer-password" placeholder="Password">
+<input type="text" id="buyer-phone" placeholder="Phone">
+<button id="buyer-register-btn">Register</button>
+</div>
+
+<script>
+document.getElementById('buyer-register-btn').onclick = async () => {
+  const username=document.getElementById('buyer-username').value;
+  const email=document.getElementById('buyer-email').value;
+  const password=document.getElementById('buyer-password').value;
+  const phone=document.getElementById('buyer-phone').value;
+  const res = await fetch('/api/register', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username,email,password,phone,role:'buyer'})
+  });
+  const data = await res.json();
+  if(data.success) location.href='buyer-login.html';
+  else alert('Registration failed');
+}
+</script>
+</body>
+</html>
