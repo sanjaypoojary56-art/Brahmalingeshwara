@@ -1,0 +1,34 @@
+/* Body and header */
+body { font-family: 'Poppins', sans-serif; margin:0; padding:0; background:#f0f2f5; }
+header { background:#0d1b2a; color:white; text-align:center; padding:1rem; font-size:2rem; }
+
+/* Buttons */
+button { background:#4c6ef5; color:white; border:none; padding:0.8rem; border-radius:0.5rem; cursor:pointer; transition:0.3s;}
+button:hover{background:#3b5bdb; transform:translateY(-2px);}
+
+/* Buyer - Product cards */
+.product-card { display:inline-block; width:250px; margin:1rem; border-radius:1rem; overflow:hidden; box-shadow:0 10px 20px rgba(0,0,0,0.2); transition:0.3s;}
+.product-card img{width:100%; height:200px; object-fit:cover;}
+.product-card h3{margin:0.5rem 0; font-size:1.2rem;}
+.product-card p{margin:0.3rem 0; color:#555;}
+
+/* Seller - Form */
+#seller-form { background:white; max-width:500px; margin:2rem auto; padding:2rem; border-radius:1rem; box-shadow:0 10px 30px rgba(0,0,0,0.15); display:flex; flex-direction:column;}
+#seller-form input{margin:0.5rem 0; padding:0.7rem 1rem; border-radius:0.5rem; border:1px solid #ccc;}
+#seller-form input:focus{border-color:#4c6ef5; box-shadow:0 0 5px rgba(76,110,245,0.5);}
+#seller-form button{margin-top:1rem;}
+#seller-msg{margin-top:1rem; text-align:center; font-weight:bold;}
+
+/* Seller product cards */
+.seller-product-card { display:inline-block; width:200px; margin:1rem; border-radius:1rem; overflow:hidden; box-shadow:0 10px 20px rgba(0,0,0,0.2); transition:0.3s;}
+.seller-product-card:hover{transform:translateY(-5px) scale(1.05);}
+.seller-product-card img{width:100%; height:150px; object-fit:cover;}
+.seller-product-info{padding:0.8rem; background:#f8f9fa;}
+.seller-product-info h3{margin:0.3rem 0; font-size:1.1rem;}
+.seller-product-info p{font-size:0.9rem; color:#555;}
+
+/* Responsive */
+@media(max-width:600px){
+    #seller-form { width:90%; padding:1rem; }
+    .seller-product-card, .product-card { width:90%; margin:1rem auto; }
+}
