@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body id="seller-page">
+<header>Seller Dashboard</header>
+
+<form id="seller-form">
+    <input type="text" name="name" placeholder="Product Name" required>
+    <textarea name="description" placeholder="Product Description" required></textarea>
+    <input type="number" name="price" placeholder="Price" required>
+    <input type="file" name="image" id="product-image" accept="image/*" required>
+    <img id="img-preview" src="" style="width:100%; margin-top:1rem;"/>
+    <button type="submit">Add Product</button>
+    <div id="seller-msg"></div>
+</form>
+
+<div id="seller-products"></div>
+
+<script src="seller.js"></script>
+</body>
+</html>
