@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Seller Panel</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>SELLER PANEL</header>
+<form id="seller-form" enctype="multipart/form-data">
+  <input type="text" id="prod-name" placeholder="Product Name" required>
+  <input type="text" id="prod-desc" placeholder="Description">
+  <input type="number" id="prod-price" placeholder="Price" required>
+  <input type="text" id="prod-image-url" placeholder="Or paste Image URL">
+  <input type="file" id="prod-image-file">
+  <button type="submit">Add Product</button>
+</form>
+<p id="seller-msg"></p>
+<script>
+document.getElementById('seller-form').onsubmit = async (e)=>{
+  e.preventDefault();
+  const formData = new FormData();
+  const name = document.getElementById('prod-name').value;
+  const description = document.getElementById('prod-desc').value;
+  const price = document.getElementById('prod-price').value;
+  const image_url = document.getElementById('prod-image-url').value;
+  const image_file = document.getElementById('prod-image-file').files[0];
+  formData.append('name', name);
+  formData.append('description', description);
+  formData.append('price', price);
+  if(image_url) formData.append('image_url', image_url);
+  if(image_file) formData.append('image', image_file);
+  const res = await fetch('/seller/add-product',{method:'POST', body: formData});
+  const data = await res.json();
+  document.getElementById('seller-msg').innerText = data.message;
+};
+</script>
+</body>
+</html>
