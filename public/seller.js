@@ -1,6 +1,16 @@
 const addBtn = document.getElementById('add-product-btn');
-const categorySelect = document.getElementById('product-category');
+const categoryInput = document.getElementById('product-category');
 
+addBtn.onclick = async () => {
+  const productName = document.getElementById('product-name').value.trim();
+  const productPrice = document.getElementById('product-price').value;
+  const productStock = document.getElementById('product-stock').value || 0;
+  const categoryName = categoryInput.value.trim();
+
+  if (!productName || !productPrice || !categoryName) {
+    alert('Please provide product name, price and category.');
+    return;
+  }
 async function loadCategories() {
   try {
     const res = await fetch('/api/categories');
@@ -34,6 +44,7 @@ addBtn.onclick = async () => {
   formData.append('name', productName);
   formData.append('price', productPrice);
   formData.append('stock', productStock);
+  formData.append('category_name', categoryName);
   formData.append('category_id', categoryId);
 
   const image = document.getElementById('product-image').files[0];
@@ -58,6 +69,7 @@ addBtn.onclick = async () => {
       document.getElementById('product-price').value = '';
       document.getElementById('product-stock').value = '';
       document.getElementById('product-image').value = '';
+      categoryInput.value = '';
       categorySelect.value = '';
     } else {
       alert(data.message || 'Unable to add product. Please login as seller.');
@@ -139,6 +151,5 @@ async function fetchOrders() {
 }
 
 window.onload = async () => {
-  await loadCategories();
   await fetchOrders();
 };
