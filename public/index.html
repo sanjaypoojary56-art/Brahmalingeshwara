@@ -50,3 +50,90 @@
   <script src="script.js"></script>
 </body>
 </html>
+diff --git a/public/index.html b/public/index.html
+index 774c8497432f79b660315b2093273e92c7c54cdd..5d8b0bf6f0b8cc80c723d4795a50d18f356ea938 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -1,42 +1,52 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+-<meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+-<title>Lamp Shop</title>
+-<link rel="stylesheet" href="style.css">
++  <meta charset="UTF-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1.0">
++  <title>Lamp Shop</title>
++  <link rel="stylesheet" href="style.css">
+ </head>
+ <body>
+-<nav>
+-  <h1>Lamp Shop</h1>
+-  <ul>
+-    <li><a href="index.html">Home</a></li>
+-    <li><a href="buyer-login.html">Buyer Login</a></li>
+-    <li><a href="buyer-register.html">Buyer Register</a></li>
+-    <li><a href="seller-login.html">Seller Login</a></li>
+-    <li><a href="seller-register.html">Seller Register</a></li>
+-  </ul>
+-</nav>
++  <nav class="main-nav">
++    <h1>Lamp Shop</h1>
++    <div class="nav-right">
++      <a class="nav-link" href="buyer-login.html">Buyer Login</a>
++      <button id="menu-toggle" class="menu-btn" aria-label="Open menu">⋮</button>
++      <div id="menu-dropdown" class="menu-dropdown hidden">
++        <a href="seller-login.html">Seller Login</a>
++        <a href="seller-register.html">Seller Register</a>
++      </div>
++    </div>
++  </nav>
+ 
+-<section class="search-bar">
+-  <input type="text" id="search" placeholder="Search products...">
+-</section>
++  <section class="search-bar">
++    <input type="text" id="search" placeholder="Search products by name...">
++  </section>
+ 
+-<section class="slideshow" id="slideshow"></section>
+-<section class="product-grid" id="product-grid"></section>
++  <section class="slideshow-wrapper">
++    <h2>Featured Products</h2>
++    <section class="slideshow" id="slideshow"></section>
++  </section>
+ 
+-<div id="product-modal" class="modal">
+-  <div class="modal-content">
+-    <span class="close">&times;</span>
+-    <img id="modal-img" src="">
+-    <h2 id="modal-name"></h2>
+-    <p id="modal-price"></p>
+-    <input type="number" id="modal-qty" value="1" min="1">
+-    <button id="buy-now">Buy Now</button>
+-    <button id="add-cart">Add to Cart</button>
++  <section class="catalog-wrapper">
++    <h2>All Products</h2>
++    <section class="product-grid" id="product-grid"></section>
++  </section>
++
++  <div id="product-modal" class="modal" role="dialog" aria-modal="true">
++    <div class="modal-content">
++      <span class="close" id="close-modal">&times;</span>
++      <img id="modal-img" src="" alt="Product image">
++      <h2 id="modal-name"></h2>
++      <p id="modal-price"></p>
++      <p id="modal-category"></p>
++      <label for="modal-qty">Quantity</label>
++      <input type="number" id="modal-qty" value="1" min="1">
++      <button id="buy-now">Buy Now (Cash on Delivery)</button>
++      <button id="add-cart">Add to Cart</button>
++    </div>
+   </div>
+-</div>
+ 
+-<script src="script.js"></script>
++  <script src="script.js"></script>
+ </body>
+ </html>

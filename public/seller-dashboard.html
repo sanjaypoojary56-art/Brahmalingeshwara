@@ -46,3 +46,78 @@
   <script src="seller.js"></script>
 </body>
 </html>
+diff --git a/public/seller-dashboard.html b/public/seller-dashboard.html
+index 782c3acb04dea3d7dbc52a833e2624c268c625be..30ae5ac55c0adcd91e2dca90296a4202c262d68c 100644
+--- a/public/seller-dashboard.html
++++ b/public/seller-dashboard.html
+@@ -1,39 +1,41 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+-<meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+-<title>Seller Dashboard</title>
+-<link rel="stylesheet" href="style.css">
++  <meta charset="UTF-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1.0">
++  <title>Seller Dashboard</title>
++  <link rel="stylesheet" href="style.css">
+ </head>
+ <body>
+-<nav>
+-<h1>Seller Dashboard</h1>
+-<ul>
+-<li><a href="index.html">Home</a></li>
+-</ul>
+-</nav>
++  <nav>
++    <h1>Seller Dashboard</h1>
++    <ul>
++      <li><a href="index.html">Home</a></li>
++    </ul>
++  </nav>
+ 
+-<section class="seller-add-product">
+-<h2>Add New Product</h2>
+-<input type="text" id="product-name" placeholder="Product Name">
+-<input type="number" id="product-price" placeholder="Price">
+-<input type="number" id="product-stock" placeholder="Stock">
+-<input type="number" id="product-category" placeholder="Category ID">
+-<input type="file" id="product-image">
+-<button id="add-product-btn">Add Product</button>
+-</section>
++  <section class="seller-add-product">
++    <h2>Add New Product</h2>
++    <input type="text" id="product-name" placeholder="Product Name">
++    <input type="number" id="product-price" placeholder="Price">
++    <input type="number" id="product-stock" placeholder="Stock" min="0">
++    <select id="product-category"></select>
++    <input type="file" id="product-image" accept="image/*">
++    <button id="add-product-btn">Add Product</button>
++  </section>
+ 
+-<section class="seller-orders">
+-<h2>Orders</h2>
+-<table id="orders-table">
+-<thead>
+-<tr><th>Order ID</th><th>Product</th><th>Qty</th><th>Buyer</th><th>Address</th><th>Payment</th><th>Status</th></tr>
+-</thead>
+-<tbody></tbody>
+-</table>
+-</section>
++  <section class="seller-orders">
++    <h2>Incoming Orders</h2>
++    <table id="orders-table">
++      <thead>
++        <tr>
++          <th>Order ID</th><th>Product</th><th>Qty</th><th>Buyer</th><th>Address</th><th>Payment</th><th>Status</th>
++        </tr>
++      </thead>
++      <tbody></tbody>
++    </table>
++  </section>
+ 
+-<script src="seller.js"></script>
++  <script src="seller.js"></script>
+ </body>
+ </html>
