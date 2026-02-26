@@ -644,7 +644,19 @@ app.patch('/api/authorizer/seller-registrations/:id', requireAuthorizer, async (
     }
 
     if (status === 'rejected') {
-      await client.query(`UPDATE users SET role = 'buyer' WHERE id = $1`, [id]);
+      const deletedUser = await client.query(
+        `DELETE FROM users
+         WHERE id = $1
+           AND role = 'seller'
+           AND email <> $2
+         RETURNING id`,
+        [id, 'sanjaypoojary56@gmail.com']
+      );
+
+      if (!deletedUser.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ success: false, message: 'Seller account not found' });
+      }
     }
 
     await client.query('COMMIT');
