@@ -32,14 +32,22 @@ document.getElementById('seller-login-btn').onclick = async () => {
     body:JSON.stringify({email,password})
   });
   const data = await res.json();
-  if(data.success && data.role==='seller') {
-    if (data.user?.is_authorizer) {
-      location.href='authorizer-dashboard.html';
+  if (data.success && data.role === 'seller') {
+    if (!data.user?.seller_approved && !data.user?.is_authorizer) {
+      alert('Your seller account is pending authorizer approval.');
       return;
     }
-    location.href='seller-dashboard.html';
+
+    if (data.user?.is_authorizer) {
+      location.href = 'authorizer-dashboard.html';
+      return;
+    }
+
+    location.href = 'seller-dashboard.html';
+    return;
   }
-  else alert('Invalid credentials');
+
+  alert(data.message || 'Invalid credentials');
 }
 </script>
 </body>

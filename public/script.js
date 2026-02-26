@@ -67,20 +67,8 @@ function displayProducts(list) {
     const name = document.createElement('h3');
     name.textContent = product.name;
 
-    if (product.image_url) {
-      const image = document.createElement('img');
-      image.src = product.image_url;
-      image.alt = `${product.name} product image`;
-      image.loading = 'lazy';
-      card.appendChild(image);
-    } else {
-      const noImage = document.createElement('p');
-      noImage.className = 'image-missing-text';
-      noImage.textContent = 'Image not added by seller';
-      card.appendChild(noImage);
-    }
     const image = document.createElement('img');
-    image.src = product.image_url || fallbackImage;
+    image.src = getProductImageUrl(product.image_url);
     image.alt = `${product.name} product image`;
     image.loading = 'lazy';
     image.addEventListener('error', () => {
@@ -106,6 +94,33 @@ function displayProducts(list) {
   });
 }
 
+function getProductImageUrl(imageUrl) {
+  if (!imageUrl) return fallbackImage;
+
+  const normalized = String(imageUrl).replace(/\\/g, '/').trim();
+
+  if (!normalized) return fallbackImage;
+
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    return normalized;
+  }
+
+  const uploadsIndex = normalized.lastIndexOf('/uploads/');
+  if (uploadsIndex >= 0) {
+    return normalized.slice(uploadsIndex);
+  }
+
+  if (normalized.startsWith('uploads/')) {
+    return `/${normalized}`;
+  }
+
+  if (normalized.startsWith('/')) {
+    return normalized;
+  }
+
+  return `/${normalized.replace(/^\.\//, '')}`;
+}
+
 function displaySlideshow(list) {
   slideshow.innerHTML = '';
 
@@ -116,15 +131,8 @@ function displaySlideshow(list) {
     const name = document.createElement('span');
     name.textContent = product.name;
 
-    if (product.image_url) {
-      const image = document.createElement('img');
-      image.src = product.image_url;
-      image.alt = `${product.name} product image`;
-      image.loading = 'lazy';
-      item.appendChild(image);
-    }
     const image = document.createElement('img');
-    image.src = product.image_url || fallbackImage;
+    image.src = getProductImageUrl(product.image_url);
     image.alt = `${product.name} product image`;
     image.loading = 'lazy';
     image.addEventListener('error', () => {
