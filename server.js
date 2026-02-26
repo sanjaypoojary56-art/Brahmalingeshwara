@@ -216,6 +216,30 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not add product' });
   } finally {
+    if (cloudinaryConfigured && req.file && req.file.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
+  }
+});
+
+app.get('/api/cart', requireLogin, async (req, res) => {
+  try {
+    if (req.session.user.role !== 'buyer') {
+      return res.status(403).json({ success: false, message: 'Only buyers can view cart' });
+    }
+
+    const result = await pool.query(
+      `SELECT c.id, c.quantity, p.id AS product_id, p.name, p.price, p.image_url
+       FROM cart c
+       JOIN products p ON p.id = c.product_id
+       WHERE c.buyer_id = $1
+       ORDER BY c.id DESC`,
+      [req.session.user.id]
+    );
+
+    return res.json({ success: true, items: result.rows });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Could not load cart' });
     if (cloudinaryConfigured && req.file?.path) {
     if (req.file?.path) {
       await fs.unlink(req.file.path).catch(() => {});
@@ -318,6 +342,28 @@ app.post('/api/orders', requireLogin, async (req, res) => {
     return res.status(500).json({ success: false, message: 'Order could not be placed' });
   } finally {
     client.release();
+  }
+});
+
+app.get('/api/buyer/orders', requireLogin, async (req, res) => {
+  try {
+    if (req.session.user.role !== 'buyer') {
+      return res.status(403).json({ success: false, message: 'Only buyers can view delivery status' });
+    }
+
+    const result = await pool.query(
+      `SELECT o.id, o.quantity, o.total_price, o.address, o.payment_method, o.status, o.created_at,
+              p.name AS product_name, p.image_url
+       FROM orders o
+       JOIN products p ON p.id = o.product_id
+       WHERE o.buyer_id = $1
+       ORDER BY o.created_at DESC`,
+      [req.session.user.id]
+    );
+
+    return res.json({ success: true, orders: result.rows });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Could not load delivery status' });
   }
 });
 
