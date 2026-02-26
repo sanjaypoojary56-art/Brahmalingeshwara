@@ -1,40 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Buyer Login</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buyer Login | Lamp Shop</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<nav>
-<h1>Lamp Shop</h1>
-<ul>
-<li><a href="index.html">Home</a></li>
-<li><a href="buyer-register.html">Register</a></li>
-</ul>
-</nav>
+  <nav>
+    <h1>Lamp Shop</h1>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="buyer-register.html">Buyer Register</a></li>
+      <li><a href="seller-login.html">Seller Login</a></li>
+    </ul>
+  </nav>
 
-<div class="auth-container">
-<h2>Buyer Login</h2>
-<input type="email" id="buyer-email" placeholder="Email">
-<input type="password" id="buyer-password" placeholder="Password">
-<button id="buyer-login-btn">Login</button>
-</div>
+  <div class="auth-container">
+    <h2>Buyer Login</h2>
+    <input type="email" id="buyer-email" placeholder="Email" required>
+    <input type="password" id="buyer-password" placeholder="Password" required>
+    <button id="buyer-login-btn">Login</button>
+    <p style="margin-top:10px;">New buyer? <a href="buyer-register.html">Create account</a></p>
+  </div>
 
-<script>
-document.getElementById('buyer-login-btn').onclick = async () => {
-  const email = document.getElementById('buyer-email').value;
-  const password = document.getElementById('buyer-password').value;
-  const res = await fetch('/api/login', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({email,password})
-  });
-  const data = await res.json();
-  if(data.success && data.role==='buyer') location.href='index.html';
-  else alert('Invalid credentials');
-}
-</script>
+  <script>
+    document.getElementById('buyer-login-btn').onclick = async () => {
+      const email = document.getElementById('buyer-email').value.trim();
+      const password = document.getElementById('buyer-password').value;
+
+      if (!email || !password) {
+        alert('Please enter email and password.');
+        return;
+      }
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.role === 'buyer') {
+        location.href = 'index.html';
+      } else {
+        alert(data.message || 'Invalid buyer credentials');
+      }
+    };
+  </script>
 </body>
 </html>
