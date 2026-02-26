@@ -39,6 +39,28 @@ addBtn.onclick = async () => {
   formData.append('price', price);
   formData.append('stock', stock);
   formData.append('category_name', category_name);
+const categorySelect = document.getElementById('product-category');
+
+async function loadCategories() {
+  const res = await fetch('/api/categories');
+  const data = await res.json();
+
+  if (!data.success || !data.categories.length) {
+    categorySelect.innerHTML = '<option value="">No category found</option>';
+    return;
+  }
+
+  categorySelect.innerHTML = data.categories
+    .map((category) => `<option value="${category.id}">${category.name}</option>`)
+    .join('');
+}
+
+addBtn.onclick = async () => {
+  const formData = new FormData();
+  formData.append('name', document.getElementById('product-name').value);
+  formData.append('price', document.getElementById('product-price').value);
+  formData.append('stock', document.getElementById('product-stock').value || 0);
+  formData.append('category_id', categorySelect.value);
 
   const image = document.getElementById('product-image').files[0];
   if (image) {
@@ -63,6 +85,7 @@ addBtn.onclick = async () => {
     window.location.href = 'seller-login.html';
     return;
   }
+  const data = await res.json();
 
   if (data.success) {
     alert('Product added successfully!');
@@ -148,5 +171,6 @@ window.onload = async () => {
   const isSeller = await ensureSellerSession();
   if (!isSeller) return;
 
+  await loadCategories();
   await fetchOrders();
 };
