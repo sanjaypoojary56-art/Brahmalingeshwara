@@ -11,6 +11,7 @@
     <h1>Seller Dashboard</h1>
     <ul>
       <li><a href="index.html">Home</a></li>
+      <li id="authorizer-link" class="hidden"><a href="authorizer-dashboard.html">Authorizer Dashboard</a></li>
     </ul>
   </nav>
 
@@ -44,5 +45,18 @@
   </section>
 
   <script src="seller.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/me');
+        const data = await res.json();
+        if (data?.user?.is_authorizer) {
+          document.getElementById('authorizer-link').classList.remove('hidden');
+        }
+      } catch (_error) {
+        // no-op
+      }
+    });
+  </script>
 </body>
 </html>
