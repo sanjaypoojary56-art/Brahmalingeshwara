@@ -162,6 +162,13 @@ app.post('/api/login', async (req, res) => {
         'SELECT status FROM seller_registration_approvals WHERE user_id = $1',
         [user.id]
       );
+      const sellerApprovalStatus = approvalResult.rows[0]?.status;
+
+      if (sellerApprovalStatus === 'rejected') {
+        return res.status(403).json({ success: false, message: 'Seller registration rejected by authorizer' });
+      }
+
+      sellerApproved = sellerApprovalStatus === 'approved';
       sellerApproved = approvalResult.rows[0]?.status === 'approved';
     }
 
@@ -468,6 +475,8 @@ app.get('/api/authorizer/seller-registrations', requireAuthorizer, async (_req, 
 });
 
 app.patch('/api/authorizer/seller-registrations/:id', requireAuthorizer, async (req, res) => {
+  const client = await pool.connect();
+
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -476,6 +485,9 @@ app.patch('/api/authorizer/seller-registrations/:id', requireAuthorizer, async (
       return res.status(400).json({ success: false, message: 'Invalid approval status' });
     }
 
+    await client.query('BEGIN');
+
+    const result = await client.query(
     const result = await pool.query(
       `UPDATE seller_registration_approvals
        SET status = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
@@ -485,6 +497,21 @@ app.patch('/api/authorizer/seller-registrations/:id', requireAuthorizer, async (
     );
 
     if (!result.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Seller registration not found' });
+    }
+
+    if (status === 'rejected') {
+      await client.query(`UPDATE users SET role = 'buyer' WHERE id = $1`, [id]);
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, seller: result.rows[0] });
+  } catch (_error) {
+    await client.query('ROLLBACK');
+    return res.status(500).json({ success: false, message: 'Could not update seller approval' });
+  } finally {
+    client.release();
       return res.status(404).json({ success: false, message: 'Seller registration not found' });
     }
 

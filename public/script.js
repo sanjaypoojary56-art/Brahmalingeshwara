@@ -96,6 +96,29 @@ function displayProducts(list) {
 
 function getProductImageUrl(imageUrl) {
   if (!imageUrl) return fallbackImage;
+
+  const normalized = String(imageUrl).replace(/\\/g, '/').trim();
+
+  if (!normalized) return fallbackImage;
+
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    return normalized;
+  }
+
+  const uploadsIndex = normalized.lastIndexOf('/uploads/');
+  if (uploadsIndex >= 0) {
+    return normalized.slice(uploadsIndex);
+  }
+
+  if (normalized.startsWith('uploads/')) {
+    return `/${normalized}`;
+  }
+
+  if (normalized.startsWith('/')) {
+    return normalized;
+  }
+
+  return `/${normalized.replace(/^\.\//, '')}`;
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('/')) {
     return imageUrl;
   }

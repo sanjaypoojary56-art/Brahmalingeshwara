@@ -413,3 +413,85 @@ nav ul {
   background: #fee2e2;
   color: #991b1b;
 }
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .main-nav,
+  nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  .nav-right {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .menu-dropdown {
+    top: 2.6rem;
+    right: auto;
+    left: 0;
+  }
+
+  .slideshow-wrapper,
+  .catalog-wrapper,
+  .search-bar {
+    padding: 0 0.7rem 0.8rem;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+
+  .product-card {
+    padding: 0.7rem;
+  }
+
+  .product-card.active {
+    transform: none;
+  }
+
+  .product-card img,
+  .slide-item img {
+    height: 120px;
+  }
+
+  .auth-container,
+  .seller-add-product,
+  .seller-orders {
+    width: calc(100% - 1rem);
+    max-width: none;
+    margin: 1rem auto;
+    padding: 1rem;
+  }
+
+  #orders-table,
+  #seller-approvals-table,
+  #authorizer-orders-table {
+    min-width: 680px;
+  }
+
+  .modal-content {
+    width: calc(100% - 1rem);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .cart-item,
+  .order-item {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-item img,
+  .order-item img {
+    width: 100%;
+    height: 160px;
+  }
+}
