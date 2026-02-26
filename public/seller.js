@@ -11,12 +11,41 @@ addBtn.onclick = async () => {
     alert('Please provide product name, price and category.');
     return;
   }
+async function loadCategories() {
+  try {
+    const res = await fetch('/api/categories');
+    const data = await res.json();
+
+    if (!data.success || !data.categories.length) {
+      categorySelect.innerHTML = '<option value="">No category found</option>';
+      return;
+    }
+
+    categorySelect.innerHTML = ['<option value="">Select category</option>']
+      .concat(data.categories.map((category) => `<option value="${category.id}">${category.name}</option>`))
+      .join('');
+  } catch (_error) {
+    categorySelect.innerHTML = '<option value="">Could not load categories</option>';
+  }
+}
+
+addBtn.onclick = async () => {
+  const productName = document.getElementById('product-name').value.trim();
+  const productPrice = document.getElementById('product-price').value;
+  const productStock = document.getElementById('product-stock').value || 0;
+  const categoryId = categorySelect.value;
+
+  if (!productName || !productPrice || !categoryId) {
+    alert('Please provide product name, price and category.');
+    return;
+  }
 
   const formData = new FormData();
   formData.append('name', productName);
   formData.append('price', productPrice);
   formData.append('stock', productStock);
   formData.append('category_name', categoryName);
+  formData.append('category_id', categoryId);
 
   const image = document.getElementById('product-image').files[0];
   if (image) {
@@ -41,6 +70,7 @@ addBtn.onclick = async () => {
       document.getElementById('product-stock').value = '';
       document.getElementById('product-image').value = '';
       categoryInput.value = '';
+      categorySelect.value = '';
     } else {
       alert(data.message || 'Unable to add product. Please login as seller.');
     }
