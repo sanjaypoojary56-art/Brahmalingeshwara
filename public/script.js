@@ -61,6 +61,7 @@ function displayProducts(list) {
     card.className = 'product-card';
     card.innerHTML = `
       <img src="${product.image_url || fallbackImage}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
+      <img src="${product.image_url || fallbackImage}" alt="${product.name}">
       <h3>${product.name}</h3>
       <p>₹${Number(product.price).toFixed(2)}</p>
     `;
@@ -85,6 +86,7 @@ function displaySlideshow(list) {
     item.className = 'slide-item';
     item.innerHTML = `
       <img src="${product.image_url || fallbackImage}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
+      <img src="${product.image_url || fallbackImage}" alt="${product.name}">
       <span>${product.name}</span>
     `;
     item.addEventListener('click', () => openModal(product));
