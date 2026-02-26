@@ -102,6 +102,19 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
 
+
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (!result.rows.length) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    const user = result.rows[0];
+    const matched = await bcrypt.compare(password, user.password_hash);
+
+    if (!matched) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+
     req.session.user = {
       id: user.id,
       username: user.username,
@@ -136,6 +149,46 @@ app.get('/api/categories', async (_req, res) => {
 
 app.post('/api/products', requireSeller, upload.single('image'), async (req, res) => {
   try {
+    const { name, price, stock, category_id, category_name } = req.body;
+
+    if (!name || !price || (!category_id && !category_name)) {
+      return res.status(400).json({ success: false, message: 'Missing required product fields' });
+    }
+
+    let finalCategoryId = category_id;
+
+    if (!finalCategoryId && category_name) {
+      const categoryResult = await pool.query(
+        `INSERT INTO categories(name)
+         VALUES($1)
+         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+         RETURNING id`,
+        [category_name.trim()]
+      );
+      finalCategoryId = categoryResult.rows[0].id;
+    }
+
+    let imageUrl = null;
+
+    if (
+      req.file &&
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+    ) {
+      const uploaded = await cloudinary.uploader.upload(req.file.path);
+      imageUrl = uploaded.secure_url;
+    } else if (req.body.image_url) {
+      imageUrl = req.body.image_url;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO products(seller_id, category_id, name, price, stock, image_url)
+       VALUES($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [req.session.user.id, finalCategoryId, name, Number(price), Number(stock) || 0, imageUrl]
+    );
+
     const { name, price, stock, category_id } = req.body;
 
     if (!name || !price || !category_id) {
@@ -240,6 +293,12 @@ app.post('/api/orders', requireLogin, async (req, res) => {
     }
 
     const product = productRes.rows[0];
+
+    if ((product.stock || 0) < qty) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Insufficient stock' });
+    }
+
 
     if ((product.stock || 0) < qty) {
       await client.query('ROLLBACK');
