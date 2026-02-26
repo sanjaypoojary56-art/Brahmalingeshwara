@@ -20,7 +20,6 @@ function renderCart(items) {
     card.className = 'cart-item';
     card.innerHTML = `
       <img src="${item.image_url || fallbackImage}" alt="${item.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
-      <img src="${item.image_url || 'https://via.placeholder.com/120x90?text=Lamp'}" alt="${item.name}">
       <div>
         <h3>${item.name}</h3>
         <p>Qty: ${item.quantity}</p>
