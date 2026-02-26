@@ -5,7 +5,6 @@ const menuToggle = document.getElementById('menu-toggle');
 const menuDropdown = document.getElementById('menu-dropdown');
 
 const modal = document.getElementById('product-modal');
-const modalImg = document.getElementById('modal-img');
 const modalName = document.getElementById('modal-name');
 const modalPrice = document.getElementById('modal-price');
 const modalCategory = document.getElementById('modal-category');
@@ -16,17 +15,6 @@ const closeModal = document.getElementById('close-modal');
 
 let products = [];
 let selectedProduct = null;
-const fallbackImage =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="220"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="%23ffb347"/><stop offset="100%" stop-color="%236a82fb"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="28" font-family="Arial">Product</text></svg>';
-
-function resolveImageUrl(imageUrl) {
-  if (!imageUrl) return fallbackImage;
-
-  if (/^(https?:|data:|blob:)/i.test(imageUrl)) return imageUrl;
-  if (imageUrl.startsWith('/')) return imageUrl;
-
-  return `/uploads/${imageUrl}`;
-}
 
 menuToggle.addEventListener('click', () => {
   menuDropdown.classList.toggle('hidden');
@@ -68,11 +56,15 @@ function displayProducts(list) {
   list.forEach((product) => {
     const card = document.createElement('article');
     card.className = 'product-card';
-    card.innerHTML = `
-      <img src="${resolveImageUrl(product.image_url)}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
-      <h3>${product.name}</h3>
-      <p>₹${Number(product.price).toFixed(2)}</p>
-    `;
+
+    const name = document.createElement('h3');
+    name.textContent = product.name;
+
+    const price = document.createElement('p');
+    price.textContent = `₹${Number(product.price).toFixed(2)}`;
+
+    card.appendChild(name);
+    card.appendChild(price);
 
     card.addEventListener('click', () => {
       document.querySelectorAll('.product-card.active').forEach((element) => {
@@ -92,10 +84,11 @@ function displaySlideshow(list) {
   list.forEach((product) => {
     const item = document.createElement('div');
     item.className = 'slide-item';
-    item.innerHTML = `
-      <img src="${resolveImageUrl(product.image_url)}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
-      <span>${product.name}</span>
-    `;
+
+    const name = document.createElement('span');
+    name.textContent = product.name;
+
+    item.appendChild(name);
     item.addEventListener('click', () => openModal(product));
     slideshow.appendChild(item);
   });
@@ -103,11 +96,6 @@ function displaySlideshow(list) {
 
 function openModal(product) {
   selectedProduct = product;
-  modalImg.src = resolveImageUrl(product.image_url);
-  modalImg.onerror = () => {
-    modalImg.onerror = null;
-    modalImg.src = fallbackImage;
-  };
   modalName.textContent = product.name;
   modalPrice.textContent = `Price: ₹${Number(product.price).toFixed(2)}`;
   modalCategory.textContent = `Category: ${product.category_name || 'General'}`;
