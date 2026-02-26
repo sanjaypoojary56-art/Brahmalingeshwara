@@ -92,9 +92,12 @@ addBtn.addEventListener('click', async () => {
   formData.append('category_name', categoryName);
 
   const image = document.getElementById('product-image').files[0];
-  if (image) {
-    formData.append('image', image);
+  if (!image) {
+    alert('Please upload product image.');
+    return;
   }
+
+  formData.append('image', image);
 
   try {
     addBtn.disabled = true;

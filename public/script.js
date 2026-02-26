@@ -67,6 +67,18 @@ function displayProducts(list) {
     const name = document.createElement('h3');
     name.textContent = product.name;
 
+    if (product.image_url) {
+      const image = document.createElement('img');
+      image.src = product.image_url;
+      image.alt = `${product.name} product image`;
+      image.loading = 'lazy';
+      card.appendChild(image);
+    } else {
+      const noImage = document.createElement('p');
+      noImage.className = 'image-missing-text';
+      noImage.textContent = 'Image not added by seller';
+      card.appendChild(noImage);
+    }
     const image = document.createElement('img');
     image.src = product.image_url || fallbackImage;
     image.alt = `${product.name} product image`;
@@ -104,6 +116,13 @@ function displaySlideshow(list) {
     const name = document.createElement('span');
     name.textContent = product.name;
 
+    if (product.image_url) {
+      const image = document.createElement('img');
+      image.src = product.image_url;
+      image.alt = `${product.name} product image`;
+      image.loading = 'lazy';
+      item.appendChild(image);
+    }
     const image = document.createElement('img');
     image.src = product.image_url || fallbackImage;
     image.alt = `${product.name} product image`;

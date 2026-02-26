@@ -72,8 +72,10 @@ app.get('/api/health', (_req, res) => {
 app.post('/api/register', async (req, res) => {
   try {
     const { username, email, password, phone, role } = req.body;
+    const normalizedUsername = username ? username.trim() : '';
+    const normalizedEmail = email ? email.trim().toLowerCase() : '';
 
-    if (!username || !email || !password || !role) {
+    if (!normalizedUsername || !normalizedEmail || !password || !role) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
 
@@ -88,7 +90,7 @@ app.post('/api/register', async (req, res) => {
       `INSERT INTO users(username, email, password_hash, phone, role)
        VALUES($1, $2, $3, $4, $5)
        RETURNING id, username, email, role`,
-      [username, email, hash, phone || null, role]
+      [normalizedUsername, normalizedEmail, hash, phone || null, role]
     );
 
     return res.json({ success: true, user: result.rows[0] });
@@ -97,15 +99,16 @@ app.post('/api/register', async (req, res) => {
       return res.status(409).json({ success: false, message: 'Email already exists' });
     }
 
-    return res.status(500).json({ success: false, message: 'Registration failed' });
+    return res.status(500).json({ success: false, message: error.message || 'Registration failed' });
   }
 });
 
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email ? email.trim().toLowerCase() : '';
 
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [normalizedEmail]);
     if (!result.rows.length) {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
@@ -163,6 +166,10 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
 
     if (!name || !price || (!category_id && !normalizedCategoryName)) {
       return res.status(400).json({ success: false, message: 'Missing required product fields' });
+    }
+
+    if (!req.file && !req.body.image_url) {
+      return res.status(400).json({ success: false, message: 'Product image is required' });
     }
 
     let finalCategoryId = category_id;

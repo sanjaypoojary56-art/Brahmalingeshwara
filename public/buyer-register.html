@@ -26,10 +26,16 @@
 
 <script>
 document.getElementById('buyer-register-btn').onclick = async () => {
-  const username=document.getElementById('buyer-username').value;
-  const email=document.getElementById('buyer-email').value;
+  const username=document.getElementById('buyer-username').value.trim();
+  const email=document.getElementById('buyer-email').value.trim();
   const password=document.getElementById('buyer-password').value;
-  const phone=document.getElementById('buyer-phone').value;
+  const phone=document.getElementById('buyer-phone').value.trim();
+
+  if (!username || !email || !password) {
+    alert('Please fill username, email and password.');
+    return;
+  }
+
   const res = await fetch('/api/register', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -37,7 +43,7 @@ document.getElementById('buyer-register-btn').onclick = async () => {
   });
   const data = await res.json();
   if(data.success) location.href='buyer-login.html';
-  else alert('Registration failed');
+  else alert(data.message || 'Registration failed');
 }
 </script>
 </body>
