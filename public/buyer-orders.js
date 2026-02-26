@@ -21,6 +21,7 @@ function renderOrders(orders) {
 
     card.innerHTML = `
       <img src="${order.image_url || fallbackImage}" alt="${order.product_name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
+      <img src="${order.image_url || 'https://via.placeholder.com/120x90?text=Lamp'}" alt="${order.product_name}">
       <div>
         <h3>${order.product_name}</h3>
         <p>Qty: ${order.quantity}</p>
