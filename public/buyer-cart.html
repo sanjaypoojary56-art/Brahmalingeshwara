@@ -20,6 +20,37 @@
     <section id="cart-list" class="cart-list"></section>
   </section>
 
+
+
+  <div id="cart-product-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span class="close" id="close-cart-modal">&times;</span>
+      <h2 id="cart-modal-name"></h2>
+      <p id="cart-modal-price"></p>
+      <div class="modal-image-wrap">
+        <button id="cart-modal-prev-image" class="image-nav-btn" type="button" aria-label="Previous image">‹</button>
+        <img id="cart-modal-image" src="" alt="Product image">
+        <button id="cart-modal-next-image" class="image-nav-btn" type="button" aria-label="Next image">›</button>
+      </div>
+      <label for="cart-modal-qty">Quantity</label>
+      <input type="number" id="cart-modal-qty" value="1" min="1">
+      <div class="address-fields">
+        <h3>Delivery Address</h3>
+        <input type="text" id="cart-address-home" placeholder="Home Number" required>
+        <input type="text" id="cart-address-street" placeholder="Street" required>
+        <input type="text" id="cart-address-landmark" placeholder="Landmark" required>
+        <input type="text" id="cart-address-village" placeholder="Village" required>
+        <input type="text" id="cart-address-town" placeholder="Town" required>
+      </div>
+      <button id="cart-buy-now">Buy Now (Cash on Delivery)</button>
+    </div>
+  </div>
+
+  <div id="image-lightbox" class="lightbox" role="dialog" aria-modal="true">
+    <span class="close" id="close-lightbox">&times;</span>
+    <img id="lightbox-image" src="" alt="Full screen product image">
+  </div>
+
   <script src="buyer-cart.js"></script>
 </body>
 </html>

@@ -178,13 +178,18 @@ addBtn.addEventListener('click', async () => {
   formData.append('stock', productStock);
   formData.append('category_name', categoryName);
 
-  const image = document.getElementById('product-image').files[0];
-  if (!image) {
-    alert('Please upload product image.');
+  const images = Array.from(document.getElementById('product-image').files);
+  if (!images.length) {
+    alert('Please upload at least one product image.');
     return;
   }
 
-  formData.append('image', image);
+  if (images.length > 6) {
+    alert('You can upload up to 6 images per product.');
+    return;
+  }
+
+  images.forEach((image) => formData.append('images', image));
 
   try {
     addBtn.disabled = true;

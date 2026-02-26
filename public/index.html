@@ -41,6 +41,11 @@
       <h2 id="modal-name"></h2>
       <p id="modal-price"></p>
       <p id="modal-category"></p>
+      <div class="modal-image-wrap">
+        <button id="modal-prev-image" class="image-nav-btn" type="button" aria-label="Previous image">‹</button>
+        <img id="modal-image" src="" alt="Product image">
+        <button id="modal-next-image" class="image-nav-btn" type="button" aria-label="Next image">›</button>
+      </div>
       <label for="modal-qty">Quantity</label>
       <input type="number" id="modal-qty" value="1" min="1">
       <div class="address-fields">
@@ -54,6 +59,11 @@
       <button id="buy-now">Buy Now (Cash on Delivery)</button>
       <button id="add-cart">Add to Cart</button>
     </div>
+  </div>
+
+  <div id="image-lightbox" class="lightbox" role="dialog" aria-modal="true">
+    <span class="close" id="close-lightbox">&times;</span>
+    <img id="lightbox-image" src="" alt="Full screen product image">
   </div>
 
   <script src="script.js"></script>
