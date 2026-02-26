@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const fs = require('fs/promises');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -13,6 +14,7 @@ const upload = multer({ dest: 'uploads/' });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 
 app.use(
   session({
@@ -135,23 +137,54 @@ app.get('/api/categories', async (_req, res) => {
 });
 
 app.post('/api/products', requireSeller, upload.single('image'), async (req, res) => {
-  try {
-    const { name, price, stock, category_id } = req.body;
+  const cloudinaryConfigured =
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET;
 
-    if (!name || !price || !category_id) {
+  try {
+    const { name, price, stock, category_id, category_name } = req.body;
+
+    const normalizedCategoryName = category_name ? category_name.trim() : '';
+
+    if (!name || !price || (!category_id && !normalizedCategoryName)) {
       return res.status(400).json({ success: false, message: 'Missing required product fields' });
+    }
+
+    let finalCategoryId = category_id;
+
+    if (!finalCategoryId && normalizedCategoryName) {
+      const existingCategory = await pool.query('SELECT id FROM categories WHERE LOWER(name) = LOWER($1)', [
+        normalizedCategoryName
+      ]);
+
+      if (existingCategory.rows.length) {
+        finalCategoryId = existingCategory.rows[0].id;
+      } else {
+        const insertedCategory = await pool.query(
+          'INSERT INTO categories(name) VALUES($1) RETURNING id',
+          [normalizedCategoryName]
+        );
+        finalCategoryId = insertedCategory.rows[0].id;
+      }
     }
 
     let imageUrl = null;
 
-    if (
-      req.file &&
-      process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
-    ) {
-      const uploaded = await cloudinary.uploader.upload(req.file.path);
-      imageUrl = uploaded.secure_url;
+    if (req.file) {
+      if (cloudinaryConfigured) {
+        try {
+          const uploaded = await cloudinary.uploader.upload(req.file.path);
+          imageUrl = uploaded.secure_url;
+        } catch (_uploadError) {
+          return res.status(502).json({
+            success: false,
+            message: 'Could not upload image. Please verify Cloudinary credentials and try again.'
+          });
+        }
+      } else {
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
     } else if (req.body.image_url) {
       imageUrl = req.body.image_url;
     }
@@ -160,12 +193,16 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
       `INSERT INTO products(seller_id, category_id, name, price, stock, image_url)
        VALUES($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [req.session.user.id, category_id, name, Number(price), Number(stock) || 0, imageUrl]
+      [req.session.user.id, finalCategoryId, name, Number(price), Number(stock) || 0, imageUrl]
     );
 
     return res.json({ success: true, product: result.rows[0] });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not add product' });
+  } finally {
+    if (cloudinaryConfigured && req.file?.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
   }
 });
 
