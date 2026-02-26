@@ -2,46 +2,71 @@ const addBtn = document.getElementById('add-product-btn');
 const categorySelect = document.getElementById('product-category');
 
 async function loadCategories() {
-  const res = await fetch('/api/categories');
-  const data = await res.json();
+  try {
+    const res = await fetch('/api/categories');
+    const data = await res.json();
 
-  if (!data.success || !data.categories.length) {
-    categorySelect.innerHTML = '<option value="">No category found</option>';
-    return;
+    if (!data.success || !data.categories.length) {
+      categorySelect.innerHTML = '<option value="">No category found</option>';
+      return;
+    }
+
+    categorySelect.innerHTML = ['<option value="">Select category</option>']
+      .concat(data.categories.map((category) => `<option value="${category.id}">${category.name}</option>`))
+      .join('');
+  } catch (_error) {
+    categorySelect.innerHTML = '<option value="">Could not load categories</option>';
   }
-
-  categorySelect.innerHTML = data.categories
-    .map((category) => `<option value="${category.id}">${category.name}</option>`)
-    .join('');
 }
 
 addBtn.onclick = async () => {
+  const productName = document.getElementById('product-name').value.trim();
+  const productPrice = document.getElementById('product-price').value;
+  const productStock = document.getElementById('product-stock').value || 0;
+  const categoryId = categorySelect.value;
+
+  if (!productName || !productPrice || !categoryId) {
+    alert('Please provide product name, price and category.');
+    return;
+  }
+
   const formData = new FormData();
-  formData.append('name', document.getElementById('product-name').value);
-  formData.append('price', document.getElementById('product-price').value);
-  formData.append('stock', document.getElementById('product-stock').value || 0);
-  formData.append('category_id', categorySelect.value);
+  formData.append('name', productName);
+  formData.append('price', productPrice);
+  formData.append('stock', productStock);
+  formData.append('category_id', categoryId);
 
   const image = document.getElementById('product-image').files[0];
   if (image) {
     formData.append('image', image);
   }
 
-  const res = await fetch('/api/products', {
-    method: 'POST',
-    body: formData
-  });
+  try {
+    addBtn.disabled = true;
+    addBtn.textContent = 'Adding...';
 
-  const data = await res.json();
+    const res = await fetch('/api/products', {
+      method: 'POST',
+      body: formData
+    });
 
-  if (data.success) {
-    alert('Product added successfully!');
-    document.getElementById('product-name').value = '';
-    document.getElementById('product-price').value = '';
-    document.getElementById('product-stock').value = '';
-    document.getElementById('product-image').value = '';
-  } else {
-    alert(data.message || 'Unable to add product. Please login as seller.');
+    const data = await res.json();
+
+    if (data.success) {
+      alert('Product added successfully!');
+      document.getElementById('product-name').value = '';
+      document.getElementById('product-price').value = '';
+      document.getElementById('product-stock').value = '';
+      document.getElementById('product-image').value = '';
+      categorySelect.value = '';
+    } else {
+      alert(data.message || 'Unable to add product. Please login as seller.');
+    }
+  } catch (_error) {
+    alert('Could not reach server. Please try again.');
+  } finally {
+    addBtn.disabled = false;
+    addBtn.textContent = 'Add Product';
   }
 };
 
