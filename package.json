@@ -5,6 +5,8 @@
   "main": "server.js",
   "scripts": {
     "check:syntax": "node --check server.js && node --check public/script.js && node --check public/seller.js && node --check public/buyer-cart.js && node --check public/buyer-orders.js",
+    "check:runtime": "node scripts/validate-runtime.js",
+    "prestart": "npm run check:runtime && node --check server.js",
     "prestart": "node --check server.js",
     "start": "node server.js"
   },
