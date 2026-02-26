@@ -17,7 +17,16 @@ const closeModal = document.getElementById('close-modal');
 let products = [];
 let selectedProduct = null;
 const fallbackImage =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="220"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="%23ffb347"/><stop offset="100%" stop-color="%236a82fb"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="28" font-family="Arial">Lamp</text></svg>';
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="220"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="%23ffb347"/><stop offset="100%" stop-color="%236a82fb"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="28" font-family="Arial">Product</text></svg>';
+
+function resolveImageUrl(imageUrl) {
+  if (!imageUrl) return fallbackImage;
+
+  if (/^(https?:|data:|blob:)/i.test(imageUrl)) return imageUrl;
+  if (imageUrl.startsWith('/')) return imageUrl;
+
+  return `/uploads/${imageUrl}`;
+}
 
 menuToggle.addEventListener('click', () => {
   menuDropdown.classList.toggle('hidden');
@@ -60,7 +69,7 @@ function displayProducts(list) {
     const card = document.createElement('article');
     card.className = 'product-card';
     card.innerHTML = `
-      <img src="${product.image_url || fallbackImage}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
+      <img src="${resolveImageUrl(product.image_url)}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
       <h3>${product.name}</h3>
       <p>₹${Number(product.price).toFixed(2)}</p>
     `;
@@ -84,7 +93,7 @@ function displaySlideshow(list) {
     const item = document.createElement('div');
     item.className = 'slide-item';
     item.innerHTML = `
-      <img src="${product.image_url || fallbackImage}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
+      <img src="${resolveImageUrl(product.image_url)}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
       <span>${product.name}</span>
     `;
     item.addEventListener('click', () => openModal(product));
@@ -94,7 +103,7 @@ function displaySlideshow(list) {
 
 function openModal(product) {
   selectedProduct = product;
-  modalImg.src = product.image_url || fallbackImage;
+  modalImg.src = resolveImageUrl(product.image_url);
   modalImg.onerror = () => {
     modalImg.onerror = null;
     modalImg.src = fallbackImage;
