@@ -154,6 +154,16 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
     let finalCategoryId = category_id;
 
     if (!finalCategoryId && normalizedCategoryName) {
+      const categoryLookup = await pool.query('SELECT id FROM categories WHERE LOWER(name) = LOWER($1)', [
+        normalizedCategoryName
+      ]);
+
+      if (categoryLookup.rows.length) {
+        finalCategoryId = categoryLookup.rows[0].id;
+      } else {
+        finalCategoryId = (
+          await pool.query('INSERT INTO categories(name) VALUES($1) RETURNING id', [normalizedCategoryName])
+        ).rows[0].id;
       const existingCategory = await pool.query('SELECT id FROM categories WHERE LOWER(name) = LOWER($1)', [
         normalizedCategoryName
       ]);
