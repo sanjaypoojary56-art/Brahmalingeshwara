@@ -184,6 +184,22 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
         }
       } else {
         imageUrl = `/uploads/${req.file.filename}`;
+      if (!cloudinaryConfigured) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Image upload is not configured on the server. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.'
+        });
+      }
+
+      try {
+        const uploaded = await cloudinary.uploader.upload(req.file.path);
+        imageUrl = uploaded.secure_url;
+      } catch (_uploadError) {
+        return res.status(502).json({
+          success: false,
+          message: 'Could not upload image. Please verify Cloudinary credentials and try again.'
+        });
       }
     } else if (req.body.image_url) {
       imageUrl = req.body.image_url;
@@ -224,6 +240,10 @@ app.get('/api/cart', requireLogin, async (req, res) => {
     return res.json({ success: true, items: result.rows });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not load cart' });
+    if (cloudinaryConfigured && req.file?.path) {
+    if (req.file?.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
   }
 });
 
