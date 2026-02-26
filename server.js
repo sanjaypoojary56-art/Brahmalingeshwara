@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const fs = require('fs/promises');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -135,6 +136,11 @@ app.get('/api/categories', async (_req, res) => {
 });
 
 app.post('/api/products', requireSeller, upload.single('image'), async (req, res) => {
+  const cloudinaryConfigured =
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET;
+
   try {
     const { name, price, stock, category_id } = req.body;
 
@@ -144,14 +150,24 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
 
     let imageUrl = null;
 
-    if (
-      req.file &&
-      process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
-    ) {
-      const uploaded = await cloudinary.uploader.upload(req.file.path);
-      imageUrl = uploaded.secure_url;
+    if (req.file) {
+      if (!cloudinaryConfigured) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Image upload is not configured on the server. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.'
+        });
+      }
+
+      try {
+        const uploaded = await cloudinary.uploader.upload(req.file.path);
+        imageUrl = uploaded.secure_url;
+      } catch (_uploadError) {
+        return res.status(502).json({
+          success: false,
+          message: 'Could not upload image. Please verify Cloudinary credentials and try again.'
+        });
+      }
     } else if (req.body.image_url) {
       imageUrl = req.body.image_url;
     }
@@ -166,6 +182,10 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
     return res.json({ success: true, product: result.rows[0] });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not add product' });
+  } finally {
+    if (req.file?.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
   }
 });
 
