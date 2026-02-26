@@ -1,4 +1,6 @@
 const cartList = document.getElementById('cart-list');
+const fallbackImage =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="%23ffb347"/><stop offset="100%" stop-color="%236a82fb"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="18" font-family="Arial">Lamp</text></svg>';
 
 function renderCart(items) {
   cartList.innerHTML = '';
@@ -17,6 +19,7 @@ function renderCart(items) {
     const card = document.createElement('article');
     card.className = 'cart-item';
     card.innerHTML = `
+      <img src="${item.image_url || fallbackImage}" alt="${item.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
       <img src="${item.image_url || 'https://via.placeholder.com/120x90?text=Lamp'}" alt="${item.name}">
       <div>
         <h3>${item.name}</h3>

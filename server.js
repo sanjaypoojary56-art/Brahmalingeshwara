@@ -7,13 +7,18 @@ const { Pool } = require('pg');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const fs = require('fs/promises');
+const path = require('path');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const uploadsDir = path.join(__dirname, 'uploads');
+const upload = multer({ dest: uploadsDir });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use('/uploads', express.static(uploadsDir));
+
+fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
 app.use('/uploads', express.static('uploads'));
 
 app.use(

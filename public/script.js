@@ -60,6 +60,7 @@ function displayProducts(list) {
     const card = document.createElement('article');
     card.className = 'product-card';
     card.innerHTML = `
+      <img src="${product.image_url || fallbackImage}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
       <img src="${product.image_url || fallbackImage}" alt="${product.name}">
       <h3>${product.name}</h3>
       <p>₹${Number(product.price).toFixed(2)}</p>
@@ -84,6 +85,7 @@ function displaySlideshow(list) {
     const item = document.createElement('div');
     item.className = 'slide-item';
     item.innerHTML = `
+      <img src="${product.image_url || fallbackImage}" alt="${product.name}" onerror="this.onerror=null;this.src='${fallbackImage}'">
       <img src="${product.image_url || fallbackImage}" alt="${product.name}">
       <span>${product.name}</span>
     `;
@@ -95,6 +97,10 @@ function displaySlideshow(list) {
 function openModal(product) {
   selectedProduct = product;
   modalImg.src = product.image_url || fallbackImage;
+  modalImg.onerror = () => {
+    modalImg.onerror = null;
+    modalImg.src = fallbackImage;
+  };
   modalName.textContent = product.name;
   modalPrice.textContent = `Price: ₹${Number(product.price).toFixed(2)}`;
   modalCategory.textContent = `Category: ${product.category_name || 'General'}`;
