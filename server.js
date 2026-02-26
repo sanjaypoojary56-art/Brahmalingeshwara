@@ -12,6 +12,40 @@ const path = require('path');
 const app = express();
 const uploadsDir = path.join(__dirname, 'uploads');
 const upload = multer({ dest: uploadsDir });
+const maxProductImages = 6;
+
+function normalizeStoredImageList(product) {
+  if (Array.isArray(product?.image_urls) && product.image_urls.length) {
+    return product.image_urls;
+  }
+
+  const rawValue = product?.image_url;
+  if (!rawValue) {
+    return [];
+  }
+
+  if (typeof rawValue === 'string') {
+    const trimmed = rawValue.trim();
+    if (!trimmed) {
+      return [];
+    }
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(Boolean);
+        }
+      } catch (_error) {
+        // no-op
+      }
+    }
+
+    return [trimmed];
+  }
+
+  return [];
+}
 
 function isHeicImage(file) {
   if (!file) {
@@ -222,7 +256,7 @@ app.get('/api/categories', async (_req, res) => {
   }
 });
 
-app.post('/api/products', requireSeller, upload.single('image'), async (req, res) => {
+app.post('/api/products', requireSeller, upload.array('images', maxProductImages), async (req, res) => {
   const cloudinaryConfigured =
     process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_API_KEY &&
@@ -237,7 +271,9 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
       return res.status(400).json({ success: false, message: 'Missing required product fields' });
     }
 
-    if (!req.file && !req.body.image_url) {
+    const uploadedFiles = req.files || [];
+
+    if (!uploadedFiles.length && !req.body.image_url) {
       return res.status(400).json({ success: false, message: 'Product image is required' });
     }
 
@@ -257,48 +293,58 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
       }
     }
 
-    let imageUrl = null;
+    const imageUrls = [];
 
-    if (req.file) {
-      if (cloudinaryConfigured) {
-        try {
-          const uploadOptions = isHeicImage(req.file)
-            ? {
-                resource_type: 'image',
-                format: 'jpg'
-              }
-            : undefined;
+    if (uploadedFiles.length) {
+      for (const file of uploadedFiles) {
+        let imageUrl = null;
 
-          const uploaded = await cloudinary.uploader.upload(req.file.path, uploadOptions);
-          imageUrl = uploaded.secure_url;
-        } catch (_uploadError) {
-          return res.status(502).json({
-            success: false,
-            message: 'Could not upload image. Please verify Cloudinary credentials and try again.'
-          });
+        if (cloudinaryConfigured) {
+          try {
+            const uploadOptions = isHeicImage(file)
+              ? {
+                  resource_type: 'image',
+                  format: 'jpg'
+                }
+              : undefined;
+
+            const uploaded = await cloudinary.uploader.upload(file.path, uploadOptions);
+            imageUrl = uploaded.secure_url;
+          } catch (_uploadError) {
+            return res.status(502).json({
+              success: false,
+              message: 'Could not upload image. Please verify Cloudinary credentials and try again.'
+            });
+          }
         }
-      }
 
-      if (!imageUrl) {
-        imageUrl = `/uploads/${req.file.filename}`;
+        imageUrls.push(imageUrl || `/uploads/${file.filename}`);
       }
     } else if (req.body.image_url) {
-      imageUrl = req.body.image_url;
+      imageUrls.push(req.body.image_url);
     }
+
+    const storedImageValue = JSON.stringify(imageUrls);
 
     const result = await pool.query(
       `INSERT INTO products(seller_id, category_id, name, price, stock, image_url)
        VALUES($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [req.session.user.id, finalCategoryId, name, Number(price), Number(stock) || 0, imageUrl]
+      [req.session.user.id, finalCategoryId, name, Number(price), Number(stock) || 0, storedImageValue]
     );
 
-    return res.json({ success: true, product: result.rows[0] });
+    return res.json({
+      success: true,
+      product: {
+        ...result.rows[0],
+        image_urls: normalizeStoredImageList(result.rows[0])
+      }
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not add product' });
   } finally {
-    if (cloudinaryConfigured && req.file?.path) {
-      await fs.unlink(req.file.path).catch(() => {});
+    if (cloudinaryConfigured && req.files?.length) {
+      await Promise.all(req.files.map((file) => fs.unlink(file.path).catch(() => {})));
     }
   }
 });
@@ -318,7 +364,13 @@ app.get('/api/cart', requireLogin, async (req, res) => {
       [req.session.user.id]
     );
 
-    return res.json({ success: true, items: result.rows });
+    return res.json({
+      success: true,
+      items: result.rows.map((item) => ({
+        ...item,
+        image_urls: normalizeStoredImageList(item)
+      }))
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not load cart' });
   }
@@ -334,7 +386,7 @@ app.get('/api/products', async (_req, res) => {
        ORDER BY p.created_at DESC`
     );
 
-    return res.json(result.rows);
+    return res.json(result.rows.map((product) => ({ ...product, image_urls: normalizeStoredImageList(product) })));
   } catch (error) {
     return res.status(500).json([]);
   }

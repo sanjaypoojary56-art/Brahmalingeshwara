@@ -8,6 +8,7 @@ const modal = document.getElementById('product-modal');
 const modalName = document.getElementById('modal-name');
 const modalPrice = document.getElementById('modal-price');
 const modalCategory = document.getElementById('modal-category');
+const modalImage = document.getElementById('modal-image');
 const qty = document.getElementById('modal-qty');
 const addressHomeInput = document.getElementById('address-home');
 const addressStreetInput = document.getElementById('address-street');
@@ -17,9 +18,17 @@ const addressTownInput = document.getElementById('address-town');
 const buyBtn = document.getElementById('buy-now');
 const cartBtn = document.getElementById('add-cart');
 const closeModal = document.getElementById('close-modal');
+const prevImageBtn = document.getElementById('modal-prev-image');
+const nextImageBtn = document.getElementById('modal-next-image');
+
+const lightbox = document.getElementById('image-lightbox');
+const lightboxImage = document.getElementById('lightbox-image');
+const closeLightbox = document.getElementById('close-lightbox');
 
 let products = [];
 let selectedProduct = null;
+let selectedImages = [];
+let selectedImageIndex = 0;
 const fallbackImage =
   'https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=800&q=80';
 
@@ -32,6 +41,14 @@ document.addEventListener('click', (event) => {
     menuDropdown.classList.add('hidden');
   }
 });
+
+function getProductImages(product) {
+  if (Array.isArray(product?.image_urls) && product.image_urls.length) {
+    return product.image_urls.map((imageUrl) => getProductImageUrl(imageUrl));
+  }
+
+  return [getProductImageUrl(product?.image_url)];
+}
 
 async function fetchProducts() {
   const res = await fetch('/api/products');
@@ -68,7 +85,7 @@ function displayProducts(list) {
     name.textContent = product.name;
 
     const image = document.createElement('img');
-    image.src = getProductImageUrl(product.image_url);
+    image.src = getProductImages(product)[0];
     image.alt = `${product.name} product image`;
     image.loading = 'lazy';
     image.addEventListener('error', () => {
@@ -101,7 +118,7 @@ function getProductImageUrl(imageUrl) {
 
   if (!normalized) return fallbackImage;
 
-  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+  if (normalized.startsWith('http://') || normalized.startsWith('https://') || normalized.startsWith('data:')) {
     return normalized;
   }
 
@@ -119,11 +136,6 @@ function getProductImageUrl(imageUrl) {
   }
 
   return `/${normalized.replace(/^\.\//, '')}`;
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('/')) {
-    return imageUrl;
-  }
-
-  return `/${imageUrl}`;
 }
 
 function displaySlideshow(list) {
@@ -137,7 +149,7 @@ function displaySlideshow(list) {
     name.textContent = product.name;
 
     const image = document.createElement('img');
-    image.src = getProductImageUrl(product.image_url);
+    image.src = getProductImages(product)[0];
     image.alt = `${product.name} product image`;
     image.loading = 'lazy';
     image.addEventListener('error', () => {
@@ -151,8 +163,24 @@ function displaySlideshow(list) {
   });
 }
 
+function updateModalImage() {
+  if (!selectedImages.length) {
+    modalImage.src = fallbackImage;
+    prevImageBtn.disabled = true;
+    nextImageBtn.disabled = true;
+    return;
+  }
+
+  modalImage.src = selectedImages[selectedImageIndex];
+  prevImageBtn.disabled = selectedImages.length === 1;
+  nextImageBtn.disabled = selectedImages.length === 1;
+}
+
 function openModal(product) {
   selectedProduct = product;
+  selectedImages = getProductImages(product);
+  selectedImageIndex = 0;
+
   modalName.textContent = product.name;
   modalPrice.textContent = `Price: ₹${Number(product.price).toFixed(2)}`;
   modalCategory.textContent = `Category: ${product.category_name || 'General'}`;
@@ -162,8 +190,26 @@ function openModal(product) {
   addressLandmarkInput.value = '';
   addressVillageInput.value = '';
   addressTownInput.value = '';
+  updateModalImage();
   modal.style.display = 'flex';
 }
+
+modalImage.addEventListener('click', () => {
+  lightboxImage.src = selectedImages[selectedImageIndex] || fallbackImage;
+  lightbox.style.display = 'flex';
+});
+
+prevImageBtn.addEventListener('click', () => {
+  if (selectedImages.length < 2) return;
+  selectedImageIndex = (selectedImageIndex - 1 + selectedImages.length) % selectedImages.length;
+  updateModalImage();
+});
+
+nextImageBtn.addEventListener('click', () => {
+  if (selectedImages.length < 2) return;
+  selectedImageIndex = (selectedImageIndex + 1) % selectedImages.length;
+  updateModalImage();
+});
 
 closeModal.addEventListener('click', () => {
   modal.style.display = 'none';
@@ -173,6 +219,14 @@ window.addEventListener('click', (event) => {
   if (event.target === modal) {
     modal.style.display = 'none';
   }
+
+  if (event.target === lightbox) {
+    lightbox.style.display = 'none';
+  }
+});
+
+closeLightbox.addEventListener('click', () => {
+  lightbox.style.display = 'none';
 });
 
 searchInput.addEventListener('input', () => {
