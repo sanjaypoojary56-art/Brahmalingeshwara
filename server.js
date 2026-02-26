@@ -161,6 +161,9 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
       if (existingCategory.rows.length) {
         finalCategoryId = existingCategory.rows[0].id;
       } else {
+        const insertedCategory = await pool.query('INSERT INTO categories(name) VALUES($1) RETURNING id', [
+          normalizedCategoryName
+        ]);
         const insertedCategory = await pool.query(
           'INSERT INTO categories(name) VALUES($1) RETURNING id',
           [normalizedCategoryName]
@@ -182,6 +185,14 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
             message: 'Could not upload image. Please verify Cloudinary credentials and try again.'
           });
         }
+      }
+
+      if (!imageUrl) {
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
+    }
+
+    if (!imageUrl && req.body.image_url) {
       } else {
         imageUrl = `/uploads/${req.file.filename}`;
       if (!cloudinaryConfigured) {
