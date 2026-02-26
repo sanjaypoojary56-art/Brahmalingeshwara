@@ -144,6 +144,7 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
 
   try {
     const { name, price, stock, category_id, category_name } = req.body;
+
     const normalizedCategoryName = category_name ? category_name.trim() : '';
 
     if (!name || !price || (!category_id && !normalizedCategoryName)) {
@@ -163,6 +164,21 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
         finalCategoryId = (
           await pool.query('INSERT INTO categories(name) VALUES($1) RETURNING id', [normalizedCategoryName])
         ).rows[0].id;
+      const existingCategory = await pool.query('SELECT id FROM categories WHERE LOWER(name) = LOWER($1)', [
+        normalizedCategoryName
+      ]);
+
+      if (existingCategory.rows.length) {
+        finalCategoryId = existingCategory.rows[0].id;
+      } else {
+        const insertedCategory = await pool.query('INSERT INTO categories(name) VALUES($1) RETURNING id', [
+          normalizedCategoryName
+        ]);
+        const insertedCategory = await pool.query(
+          'INSERT INTO categories(name) VALUES($1) RETURNING id',
+          [normalizedCategoryName]
+        );
+        finalCategoryId = insertedCategory.rows[0].id;
       }
     }
 
@@ -187,6 +203,26 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
     }
 
     if (!imageUrl && req.body.image_url) {
+      } else {
+        imageUrl = `/uploads/${req.file.filename}`;
+      if (!cloudinaryConfigured) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Image upload is not configured on the server. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.'
+        });
+      }
+
+      try {
+        const uploaded = await cloudinary.uploader.upload(req.file.path);
+        imageUrl = uploaded.secure_url;
+      } catch (_uploadError) {
+        return res.status(502).json({
+          success: false,
+          message: 'Could not upload image. Please verify Cloudinary credentials and try again.'
+        });
+      }
+    } else if (req.body.image_url) {
       imageUrl = req.body.image_url;
     }
 
@@ -225,6 +261,10 @@ app.get('/api/cart', requireLogin, async (req, res) => {
     return res.json({ success: true, items: result.rows });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not load cart' });
+    if (cloudinaryConfigured && req.file?.path) {
+    if (req.file?.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
   }
 });
 
