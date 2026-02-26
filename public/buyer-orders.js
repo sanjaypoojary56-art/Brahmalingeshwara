@@ -15,6 +15,28 @@ function renderStatusChip(status) {
   return `<span class="${cls}">${status}</span>`;
 }
 
+function canBuyerCancel(status) {
+  return ['Processing', 'Packed'].includes(status);
+}
+
+async function cancelOrder(orderId) {
+  try {
+    const response = await fetch(`/api/buyer/orders/${orderId}/cancel`, {
+      method: 'PATCH'
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      alert(data.message || 'Could not cancel order.');
+      return;
+    }
+
+    await loadOrders();
+  } catch (_error) {
+    alert('Could not cancel order right now.');
+  }
+}
+
 function renderOrders(orders) {
   ordersList.innerHTML = '';
 
@@ -36,10 +58,24 @@ function renderOrders(orders) {
         <p>Address: ${order.address}</p>
         <p>Payment: ${order.payment_method}</p>
         <p>Status: ${renderStatusChip(order.status)}</p>
+        ${
+          canBuyerCancel(order.status)
+            ? `<button class="cancel-order-btn" data-order-id="${order.id}">Cancel Order</button>`
+            : ''
+        }
       </div>
     `;
 
     ordersList.appendChild(card);
+  });
+
+  document.querySelectorAll('.cancel-order-btn').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const orderId = button.getAttribute('data-order-id');
+      button.disabled = true;
+      button.textContent = 'Cancelling...';
+      await cancelOrder(orderId);
+    });
   });
 }
 

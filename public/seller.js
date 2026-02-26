@@ -1,6 +1,10 @@
 const addBtn = document.getElementById('add-product-btn');
 const categoryInput = document.getElementById('product-category');
 
+function canSellerCancel(status) {
+  return ['Processing', 'Packed'].includes(status);
+}
+
 function statusDropdown(orderId, currentStatus) {
   const statuses = ['Processing', 'Packed', 'Shipped', 'Delivered', 'Cancelled'];
   return `
@@ -26,6 +30,18 @@ async function updateOrderStatus(orderId, status) {
 
   if (!data.success) {
     alert(data.message || 'Could not update order status');
+  }
+}
+
+async function cancelIncomingOrder(orderId) {
+  const res = await fetch(`/api/seller/orders/${orderId}/cancel`, {
+    method: 'PATCH'
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert(data.message || 'Could not cancel order');
   }
 }
 
@@ -55,6 +71,11 @@ async function fetchOrders() {
         <td>
           ${statusDropdown(order.id, order.status)}
           <button class="status-update-btn" data-order-id="${order.id}">Save</button>
+          ${
+            canSellerCancel(order.status)
+              ? `<button class="order-cancel-btn" data-order-id="${order.id}">Cancel</button>`
+              : ''
+          }
         </td>
       `;
       tbody.appendChild(tr);
@@ -68,9 +89,75 @@ async function fetchOrders() {
         await fetchOrders();
       });
     });
+
+    document.querySelectorAll('.order-cancel-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const orderId = button.getAttribute('data-order-id');
+        await cancelIncomingOrder(orderId);
+        await fetchOrders();
+      });
+    });
   } catch (_error) {
     const tbody = document.querySelector('#orders-table tbody');
     tbody.innerHTML = '<tr><td colspan="8">Could not load orders.</td></tr>';
+  }
+}
+
+async function removeProduct(productId) {
+  const res = await fetch(`/api/seller/products/${productId}`, {
+    method: 'DELETE'
+  });
+
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.message || 'Could not remove product');
+  }
+
+  return data.success;
+}
+
+async function fetchProducts() {
+  try {
+    const res = await fetch('/api/seller/products');
+    const data = await res.json();
+    const tbody = document.querySelector('#products-table tbody');
+    tbody.innerHTML = '';
+
+    if (!data.success || !data.products.length) {
+      tbody.innerHTML = '<tr><td colspan="6">No products yet.</td></tr>';
+      return;
+    }
+
+    data.products.forEach((product) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${product.id}</td>
+        <td>${product.name}</td>
+        <td>${product.category_name || '-'}</td>
+        <td>₹${Number(product.price).toFixed(2)}</td>
+        <td>${product.stock}</td>
+        <td><button class="remove-product-btn" data-product-id="${product.id}">Remove</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll('.remove-product-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const productId = button.getAttribute('data-product-id');
+        const confirmed = window.confirm('Are you sure you want to remove this product?');
+        if (!confirmed) {
+          return;
+        }
+
+        const deleted = await removeProduct(productId);
+        if (deleted) {
+          await fetchProducts();
+        }
+      });
+    });
+  } catch (_error) {
+    const tbody = document.querySelector('#products-table tbody');
+    tbody.innerHTML = '<tr><td colspan="6">Could not load products.</td></tr>';
   }
 }
 
@@ -117,6 +204,7 @@ addBtn.addEventListener('click', async () => {
       document.getElementById('product-stock').value = '';
       document.getElementById('product-image').value = '';
       categoryInput.value = '';
+      await fetchProducts();
     } else {
       alert(data.message || 'Unable to add product. Please login as seller.');
     }
@@ -130,4 +218,5 @@ addBtn.addEventListener('click', async () => {
 
 window.onload = async () => {
   await fetchOrders();
+  await fetchProducts();
 };
