@@ -119,6 +119,11 @@ function getProductImageUrl(imageUrl) {
   }
 
   return `/${normalized.replace(/^\.\//, '')}`;
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('/')) {
+    return imageUrl;
+  }
+
+  return `/${imageUrl}`;
 }
 
 function displaySlideshow(list) {

@@ -169,6 +169,7 @@ app.post('/api/login', async (req, res) => {
       }
 
       sellerApproved = sellerApprovalStatus === 'approved';
+      sellerApproved = approvalResult.rows[0]?.status === 'approved';
     }
 
     req.session.user = {
@@ -487,6 +488,7 @@ app.patch('/api/authorizer/seller-registrations/:id', requireAuthorizer, async (
     await client.query('BEGIN');
 
     const result = await client.query(
+    const result = await pool.query(
       `UPDATE seller_registration_approvals
        SET status = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
        WHERE user_id = $3
@@ -510,6 +512,12 @@ app.patch('/api/authorizer/seller-registrations/:id', requireAuthorizer, async (
     return res.status(500).json({ success: false, message: 'Could not update seller approval' });
   } finally {
     client.release();
+      return res.status(404).json({ success: false, message: 'Seller registration not found' });
+    }
+
+    return res.json({ success: true, seller: result.rows[0] });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Could not update seller approval' });
   }
 });
 
