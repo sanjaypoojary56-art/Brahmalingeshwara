@@ -183,6 +183,15 @@ nav ul {
   margin-top: 0.6rem;
 }
 
+.image-missing-text {
+  font-size: 0.85rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px dashed #9ca3af;
+  border-radius: 8px;
+  padding: 0.65rem;
+}
+
 .empty-state {
   grid-column: 1 / -1;
 }
@@ -259,6 +268,24 @@ nav ul {
   object-fit: cover;
   border-radius: 8px;
   margin-bottom: 0.8rem;
+}
+
+.address-fields {
+  text-align: left;
+  margin-top: 0.8rem;
+}
+
+.address-fields h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.address-fields input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.4rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
 }
 
 .close {

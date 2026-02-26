@@ -9,6 +9,11 @@ const modalName = document.getElementById('modal-name');
 const modalPrice = document.getElementById('modal-price');
 const modalCategory = document.getElementById('modal-category');
 const qty = document.getElementById('modal-qty');
+const addressHomeInput = document.getElementById('address-home');
+const addressStreetInput = document.getElementById('address-street');
+const addressLandmarkInput = document.getElementById('address-landmark');
+const addressVillageInput = document.getElementById('address-village');
+const addressTownInput = document.getElementById('address-town');
 const buyBtn = document.getElementById('buy-now');
 const cartBtn = document.getElementById('add-cart');
 const closeModal = document.getElementById('close-modal');
@@ -60,6 +65,19 @@ function displayProducts(list) {
     const name = document.createElement('h3');
     name.textContent = product.name;
 
+    if (product.image_url) {
+      const image = document.createElement('img');
+      image.src = product.image_url;
+      image.alt = `${product.name} product image`;
+      image.loading = 'lazy';
+      card.appendChild(image);
+    } else {
+      const noImage = document.createElement('p');
+      noImage.className = 'image-missing-text';
+      noImage.textContent = 'Image not added by seller';
+      card.appendChild(noImage);
+    }
+
     const price = document.createElement('p');
     price.textContent = `₹${Number(product.price).toFixed(2)}`;
 
@@ -88,6 +106,13 @@ function displaySlideshow(list) {
     const name = document.createElement('span');
     name.textContent = product.name;
 
+    if (product.image_url) {
+      const image = document.createElement('img');
+      image.src = product.image_url;
+      image.alt = `${product.name} product image`;
+      image.loading = 'lazy';
+      item.appendChild(image);
+    }
     item.appendChild(name);
     item.addEventListener('click', () => openModal(product));
     slideshow.appendChild(item);
@@ -100,6 +125,11 @@ function openModal(product) {
   modalPrice.textContent = `Price: ₹${Number(product.price).toFixed(2)}`;
   modalCategory.textContent = `Category: ${product.category_name || 'General'}`;
   qty.value = 1;
+  addressHomeInput.value = '';
+  addressStreetInput.value = '';
+  addressLandmarkInput.value = '';
+  addressVillageInput.value = '';
+  addressTownInput.value = '';
   modal.style.display = 'flex';
 }
 
@@ -122,11 +152,20 @@ searchInput.addEventListener('input', () => {
 buyBtn.addEventListener('click', async () => {
   if (!selectedProduct) return;
 
-  const address = prompt('Enter delivery address:');
-  if (!address) {
-    alert('Address is required to place order.');
+  const addressParts = {
+    homeNumber: addressHomeInput.value.trim(),
+    street: addressStreetInput.value.trim(),
+    landmark: addressLandmarkInput.value.trim(),
+    village: addressVillageInput.value.trim(),
+    town: addressTownInput.value.trim()
+  };
+
+  if (Object.values(addressParts).some((field) => !field)) {
+    alert('Please fill Home Number, Street, Landmark, Village, and Town.');
     return;
   }
+
+  const address = `${addressParts.homeNumber}, ${addressParts.street}, ${addressParts.landmark}, ${addressParts.village}, ${addressParts.town}`;
 
   const response = await fetch('/api/orders', {
     method: 'POST',

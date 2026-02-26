@@ -32,7 +32,13 @@ document.getElementById('seller-login-btn').onclick = async () => {
     body:JSON.stringify({email,password})
   });
   const data = await res.json();
-  if(data.success && data.role==='seller') location.href='seller-dashboard.html';
+  if(data.success && data.role==='seller') {
+    if (data.user?.is_authorizer) {
+      location.href='authorizer-dashboard.html';
+      return;
+    }
+    location.href='seller-dashboard.html';
+  }
   else alert('Invalid credentials');
 }
 </script>
