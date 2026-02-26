@@ -13,6 +13,22 @@ const app = express();
 const uploadsDir = path.join(__dirname, 'uploads');
 const upload = multer({ dest: uploadsDir });
 
+function isHeicImage(file) {
+  if (!file) {
+    return false;
+  }
+
+  const normalizedMimeType = (file.mimetype || '').toLowerCase();
+  const normalizedFileName = (file.originalname || '').toLowerCase();
+
+  return (
+    normalizedMimeType.includes('heic') ||
+    normalizedMimeType.includes('heif') ||
+    normalizedFileName.endsWith('.heic') ||
+    normalizedFileName.endsWith('.heif')
+  );
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -246,7 +262,14 @@ app.post('/api/products', requireSeller, upload.single('image'), async (req, res
     if (req.file) {
       if (cloudinaryConfigured) {
         try {
-          const uploaded = await cloudinary.uploader.upload(req.file.path);
+          const uploadOptions = isHeicImage(req.file)
+            ? {
+                resource_type: 'image',
+                format: 'jpg'
+              }
+            : undefined;
+
+          const uploaded = await cloudinary.uploader.upload(req.file.path, uploadOptions);
           imageUrl = uploaded.secure_url;
         } catch (_uploadError) {
           return res.status(502).json({
