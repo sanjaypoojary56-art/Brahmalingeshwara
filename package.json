@@ -4,6 +4,7 @@
   "description": "Full Buyer + Seller E-commerce with Cloudinary, Neon DB, Email & SMS notifications",
   "main": "server.js",
   "scripts": {
+    "prestart": "node --check server.js",
     "start": "node server.js"
   },
   "dependencies": {
