@@ -261,6 +261,24 @@ nav ul {
   margin-bottom: 0.8rem;
 }
 
+.address-fields {
+  text-align: left;
+  margin-top: 0.8rem;
+}
+
+.address-fields h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.address-fields input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.4rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
 .close {
   position: absolute;
   top: 10px;

@@ -57,6 +57,14 @@ function requireSeller(req, res, next) {
   return next();
 }
 
+function requireAuthorizer(req, res, next) {
+  if (!req.session.user || !req.session.user.is_authorizer) {
+    return res.status(403).json({ success: false, message: 'Authorizer access required' });
+  }
+
+  return next();
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({ success: true });
 });
@@ -113,7 +121,8 @@ app.post('/api/login', async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      is_authorizer: user.role === 'seller' && user.email === 'sanjaypoojary56@gmail.com'
     };
 
     return res.json({ success: true, role: user.role, user: req.session.user });
@@ -368,6 +377,24 @@ app.get('/api/seller/orders', requireSeller, async (req, res) => {
     return res.json({ success: true, orders: result.rows });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not load orders' });
+  }
+});
+
+app.get('/api/authorizer/orders', requireAuthorizer, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT o.id, o.quantity, o.total_price, o.address, o.payment_method, o.status, o.created_at,
+              p.name AS product_name, s.username AS seller_name, b.username AS buyer_name
+       FROM orders o
+       JOIN products p ON p.id = o.product_id
+       JOIN users b ON b.id = o.buyer_id
+       JOIN users s ON s.id = p.seller_id
+       ORDER BY o.created_at DESC`
+    );
+
+    return res.json({ success: true, orders: result.rows });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Could not load authorizer orders' });
   }
 });
 
