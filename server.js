@@ -444,6 +444,57 @@ app.get('/api/buyer/orders', requireLogin, async (req, res) => {
   }
 });
 
+app.patch('/api/buyer/orders/:id/cancel', requireLogin, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    if (req.session.user.role !== 'buyer') {
+      return res.status(403).json({ success: false, message: 'Only buyers can cancel orders' });
+    }
+
+    const { id } = req.params;
+    await client.query('BEGIN');
+
+    const orderResult = await client.query(
+      `SELECT o.id, o.status, o.quantity, o.product_id
+       FROM orders o
+       WHERE o.id = $1 AND o.buyer_id = $2
+       FOR UPDATE`,
+      [id, req.session.user.id]
+    );
+
+    if (!orderResult.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const order = orderResult.rows[0];
+
+    if (!['Processing', 'Packed'].includes(order.status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'This order can no longer be cancelled' });
+    }
+
+    const cancelledOrder = await client.query(
+      `UPDATE orders
+       SET status = 'Cancelled'
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    await client.query('UPDATE products SET stock = stock + $1 WHERE id = $2', [order.quantity, order.product_id]);
+
+    await client.query('COMMIT');
+    return res.json({ success: true, order: cancelledOrder.rows[0] });
+  } catch (_error) {
+    await client.query('ROLLBACK');
+    return res.status(500).json({ success: false, message: 'Could not cancel order' });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/seller/orders', requireSeller, async (req, res) => {
   try {
     const result = await pool.query(
@@ -460,6 +511,23 @@ app.get('/api/seller/orders', requireSeller, async (req, res) => {
     return res.json({ success: true, orders: result.rows });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not load orders' });
+  }
+});
+
+app.get('/api/seller/products', requireSeller, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.id, p.name, p.price, p.stock, p.created_at, c.name AS category_name
+       FROM products p
+       LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.seller_id = $1
+       ORDER BY p.created_at DESC`,
+      [req.session.user.id]
+    );
+
+    return res.json({ success: true, products: result.rows });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Could not load products' });
   }
 });
 
@@ -565,6 +633,101 @@ app.patch('/api/seller/orders/:id/status', requireSeller, async (req, res) => {
     return res.json({ success: true, order: result.rows[0] });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not update order status' });
+  }
+});
+
+app.patch('/api/seller/orders/:id/cancel', requireSeller, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { id } = req.params;
+    await client.query('BEGIN');
+
+    const orderResult = await client.query(
+      `SELECT o.id, o.status, o.quantity, o.product_id
+       FROM orders o
+       JOIN products p ON p.id = o.product_id
+       WHERE o.id = $1 AND p.seller_id = $2
+       FOR UPDATE`,
+      [id, req.session.user.id]
+    );
+
+    if (!orderResult.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const order = orderResult.rows[0];
+
+    if (!['Processing', 'Packed'].includes(order.status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Only incoming orders can be cancelled' });
+    }
+
+    const cancelledOrder = await client.query(
+      `UPDATE orders
+       SET status = 'Cancelled'
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    await client.query('UPDATE products SET stock = stock + $1 WHERE id = $2', [order.quantity, order.product_id]);
+
+    await client.query('COMMIT');
+    return res.json({ success: true, order: cancelledOrder.rows[0] });
+  } catch (_error) {
+    await client.query('ROLLBACK');
+    return res.status(500).json({ success: false, message: 'Could not cancel order' });
+  } finally {
+    client.release();
+  }
+});
+
+app.delete('/api/seller/products/:id', requireSeller, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { id } = req.params;
+    await client.query('BEGIN');
+
+    const productResult = await client.query(
+      `SELECT id
+       FROM products
+       WHERE id = $1 AND seller_id = $2
+       FOR UPDATE`,
+      [id, req.session.user.id]
+    );
+
+    if (!productResult.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    const activeOrders = await client.query(
+      `SELECT id
+       FROM orders
+       WHERE product_id = $1
+         AND status NOT IN ('Cancelled', 'Delivered')
+       LIMIT 1`,
+      [id]
+    );
+
+    if (activeOrders.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Cannot remove product with active orders' });
+    }
+
+    await client.query('DELETE FROM cart WHERE product_id = $1', [id]);
+    await client.query('DELETE FROM products WHERE id = $1 AND seller_id = $2', [id, req.session.user.id]);
+
+    await client.query('COMMIT');
+    return res.json({ success: true });
+  } catch (_error) {
+    await client.query('ROLLBACK');
+    return res.status(500).json({ success: false, message: 'Could not remove product' });
+  } finally {
+    client.release();
   }
 });
 
