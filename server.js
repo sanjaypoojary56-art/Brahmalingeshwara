@@ -54,6 +54,10 @@ function requireSeller(req, res, next) {
     return res.status(403).json({ success: false, message: 'Seller access required' });
   }
 
+  if (!req.session.user.seller_approved) {
+    return res.status(403).json({ success: false, message: 'Seller account is pending authorizer approval' });
+  }
+
   return next();
 }
 
@@ -67,6 +71,23 @@ function requireAuthorizer(req, res, next) {
 
 app.get('/api/health', (_req, res) => {
   res.json({ success: true });
+});
+
+async function ensureSellerRegistrationApprovalsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS seller_registration_approvals (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'pending',
+      reviewed_by INTEGER REFERENCES users(id),
+      reviewed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+}
+
+ensureSellerRegistrationApprovalsTable().catch((error) => {
+  console.error('Could not initialize seller approval table:', error.message);
 });
 
 app.post('/api/register', async (req, res) => {
@@ -93,7 +114,21 @@ app.post('/api/register', async (req, res) => {
       [normalizedUsername, normalizedEmail, hash, phone || null, role]
     );
 
-    return res.json({ success: true, user: result.rows[0] });
+    if (role === 'seller') {
+      await pool.query(
+        `INSERT INTO seller_registration_approvals(user_id, status)
+         VALUES($1, 'pending')
+         ON CONFLICT (user_id)
+         DO UPDATE SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL, updated_at = NOW()`,
+        [result.rows[0].id]
+      );
+    }
+
+    return res.json({
+      success: true,
+      user: result.rows[0],
+      message: role === 'seller' ? 'Registration submitted. Wait for authorizer approval.' : null
+    });
   } catch (error) {
     if (error.code === '23505') {
       return res.status(409).json({ success: false, message: 'Email already exists' });
@@ -120,12 +155,23 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
 
+    let sellerApproved = true;
+
+    if (user.role === 'seller' && user.email !== 'sanjaypoojary56@gmail.com') {
+      const approvalResult = await pool.query(
+        'SELECT status FROM seller_registration_approvals WHERE user_id = $1',
+        [user.id]
+      );
+      sellerApproved = approvalResult.rows[0]?.status === 'approved';
+    }
+
     req.session.user = {
       id: user.id,
       username: user.username,
       email: user.email,
       role: user.role,
-      is_authorizer: user.role === 'seller' && user.email === 'sanjaypoojary56@gmail.com'
+      is_authorizer: user.role === 'seller' && user.email === 'sanjaypoojary56@gmail.com',
+      seller_approved: sellerApproved
     };
 
     return res.json({ success: true, role: user.role, user: req.session.user });
@@ -402,6 +448,49 @@ app.get('/api/authorizer/orders', requireAuthorizer, async (_req, res) => {
     return res.json({ success: true, orders: result.rows });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Could not load authorizer orders' });
+  }
+});
+
+app.get('/api/authorizer/seller-registrations', requireAuthorizer, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.username, u.email, u.phone, sra.status, sra.created_at, sra.reviewed_at
+       FROM seller_registration_approvals sra
+       JOIN users u ON u.id = sra.user_id
+       WHERE u.role = 'seller'
+       ORDER BY sra.created_at DESC`
+    );
+
+    return res.json({ success: true, sellers: result.rows });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Could not load seller registrations' });
+  }
+});
+
+app.patch('/api/authorizer/seller-registrations/:id', requireAuthorizer, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid approval status' });
+    }
+
+    const result = await pool.query(
+      `UPDATE seller_registration_approvals
+       SET status = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
+       WHERE user_id = $3
+       RETURNING user_id, status, reviewed_at`,
+      [status, req.session.user.id, id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ success: false, message: 'Seller registration not found' });
+    }
+
+    return res.json({ success: true, seller: result.rows[0] });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Could not update seller approval' });
   }
 });
 
