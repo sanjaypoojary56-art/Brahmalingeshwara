@@ -20,6 +20,8 @@ const closeModal = document.getElementById('close-modal');
 
 let products = [];
 let selectedProduct = null;
+const fallbackImage =
+  'https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=800&q=80';
 
 menuToggle.addEventListener('click', () => {
   menuDropdown.classList.toggle('hidden');
@@ -77,10 +79,18 @@ function displayProducts(list) {
       noImage.textContent = 'Image not added by seller';
       card.appendChild(noImage);
     }
+    const image = document.createElement('img');
+    image.src = product.image_url || fallbackImage;
+    image.alt = `${product.name} product image`;
+    image.loading = 'lazy';
+    image.addEventListener('error', () => {
+      image.src = fallbackImage;
+    });
 
     const price = document.createElement('p');
     price.textContent = `₹${Number(product.price).toFixed(2)}`;
 
+    card.appendChild(image);
     card.appendChild(name);
     card.appendChild(price);
 
@@ -113,6 +123,15 @@ function displaySlideshow(list) {
       image.loading = 'lazy';
       item.appendChild(image);
     }
+    const image = document.createElement('img');
+    image.src = product.image_url || fallbackImage;
+    image.alt = `${product.name} product image`;
+    image.loading = 'lazy';
+    image.addEventListener('error', () => {
+      image.src = fallbackImage;
+    });
+
+    item.appendChild(image);
     item.appendChild(name);
     item.addEventListener('click', () => openModal(product));
     slideshow.appendChild(item);
